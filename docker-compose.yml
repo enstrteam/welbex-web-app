@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"  # Проброс порта 5432 на 5433
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Для сохранения данных базы
+    networks:
+      - mynetwork
+
+  app:
+    build:
+      context: ./backend  # Путь к бэкенду
+      dockerfile: Dockerfile  # Dockerfile для бэкенда
+    ports:
+      - "3000:3000"  # Проброс порта для бэкэнд-приложения
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}  # Берем JWT_SECRET из .env
+    restart: always
+
+  frontend:
+    build:
+      context: ./welbex-frontend  # Путь к фронтенду
+      dockerfile: Dockerfile  # Dockerfile для фронтенда
+    ports:
+      - "5001:5000"  # Проброс порта для фронтенд-приложения
+    depends_on:
+      - app
+    networks:
+      - mynetwork
+    restart: always
+
+volumes:
+  pgdata:
+
+networks:
+  mynetwork:
+    driver: bridge
